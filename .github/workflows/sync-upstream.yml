@@ -1,0 +1,26 @@
+name: Sync upstream
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Fast-forward main from upstream
+        shell: bash
+        run: |
+          git remote add upstream https://github.com/z7786/wenxi.git
+          git fetch upstream main
+          if ! git merge-base --is-ancestor HEAD upstream/main; then
+            echo "::error::Fork main has diverged from upstream main; refusing to sync."
+            exit 1
+          fi
+          git merge --ff-only upstream/main
+          git push origin HEAD:main
